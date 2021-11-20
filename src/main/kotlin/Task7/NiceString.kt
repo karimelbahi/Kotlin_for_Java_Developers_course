@@ -36,6 +36,7 @@ fun String.isNice(): Boolean {
 
     /*val hasDoubleLetter = (0 until lastIndex).any { this[it] == this[it + 1] }*/
    /* val hasDoubleLetter = this.windowed(2).any { it[0]==it[1] }*/   // sif str= abcdef window returns ab bc cd de ef ...etc
+
     val hasDoubleLetter = this.zipWithNext().any{ it.first==it.second }
 
 
