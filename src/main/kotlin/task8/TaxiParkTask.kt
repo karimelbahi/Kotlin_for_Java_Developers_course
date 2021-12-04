@@ -1,5 +1,9 @@
 package main.kotlin.task8
 
+import test.kotlin.taxipark.passenger
+import test.kotlin.taxipark.trip
+import kotlin.test.asserter
+
 /*
  * Task #1. Find all the drivers who performed no trips.
  */
@@ -9,6 +13,18 @@ fun TaxiPark.findFakeDrivers(): Set<Driver> {
     val tripsDrivers = this.trips.map { it.driver }
     // get all drivers without any trips
     return this.allDrivers.filter { it !in tripsDrivers }.toSet()
+
+    /*
+    * another way
+    *     return allDrivers.filter { d->trips.none { it.driver==d } }.toSet()
+
+    * */
+
+    /*
+
+    * another way optimum solution
+    *     return allDrivers-trips.map { it.driver }
+    * */
 }
 
 /*
@@ -20,9 +36,25 @@ fun TaxiPark.findFaithfulPassengers(minTrips: Int): Set<Passenger> {
 
     return this.trips
         .flatMap { it.passengers }                  //get all passengers
-        .groupingBy { it }                          // grouping passengers woith their trips
+        .groupingBy { it }                          // grouping passengers with their trips
         .eachCount()                                //count trips for each passengers
         .filter { (passName, tripsNum) -> tripsNum >= minTrips }.keys     //return only keys
+
+    /*another sol
+    return  trips.flatMap(Trip::passengers)
+        .groupBy { passenger -> passenger }
+        .filterValues { group -> group.size >= minTrips }
+        .keys
+           */
+    /*another sol
+      return allPassengers
+        .filter { p ->
+            trips.count { p in it.passengers } >= minTrips
+        }
+        .toSet()
+    * */
+
+
 }
 
 
@@ -37,6 +69,8 @@ fun TaxiPark.findFrequentPassengers(driver: Driver): Set<Passenger> {
         .groupingBy { it }                         // grouping passengers name together [{karim,karim},{ali,ali}]
         .eachCount()                               //count number of trips for each passenger
         .filter { (_, count) -> count > 1 }.keys
+
+
 }
 
 
@@ -62,6 +96,27 @@ fun TaxiPark.findSmartPassengers(): Set<Passenger> {
     return allPassengers.filter { p -> discount(p) > nonDiscount(p) }.toSet()
 
 
+    /*another sol
+    val (tripsWithDiscount, tripsWithoutDiscount) = trips.partition { it.discount != null }
+    return allPassengers.filter { passenger ->
+    tripsWithDiscount.count { passenger in it.passengers } > tripsWithoutDiscount.count { passenger in it.passengers }
+    }.toSet()
+    */
+
+    /*another sol
+    *
+    * return allPassengers.associate { p ->
+        p to trips.filter { t -> p in t.passengers }
+    }
+        .filterValues { group ->
+            val (withDiscount, withoutDiscount) = group
+                .partition { it.discount != null }
+            withDiscount.size > withoutDiscount.size
+        }
+        .keys
+        * */
+
+
 }
 
 /*
@@ -76,9 +131,9 @@ fun TaxiPark.findTheMostFrequentTripDurationPeriod(): IntRange? {
         .maxByOrNull { it.value }?.key
 
 
-    return if (mamRange!=null){
-        (mamRange * 10)..(mamRange *10) +9
-    }else{
+    return if (mamRange != null) {
+        (mamRange * 10)..(mamRange * 10) + 9
+    } else {
         null
     }
 
@@ -90,6 +145,20 @@ fun TaxiPark.findTheMostFrequentTripDurationPeriod(): IntRange? {
         .map { (it.key * 10)..(it.key * 10) + 9 }
 //        .max(it)
         .maxBy { it.first}*/
+
+
+    /*another sol
+    return trips
+        .groupBy {
+            val start = it.duration / 10 * 10
+            val end = start + 9
+            start..end
+        }
+        .toList()
+        .maxByOrNull { (_, group) -> group.size }
+        ?.first
+
+     */
 
 
 }
@@ -110,17 +179,20 @@ fun TaxiPark.checkParetoPrinciple(): Boolean {
 
     fun calculateAllIncome(): Double {
         return trips
-            .map { t-> t.cost }
+            .map { t -> t.cost }
             .sum()
     }
 
     fun calculateTwentyPercentIncome(): Double {
         return allDrivers
-            .map { d -> findTripByDriver(d)
-                .map { it.cost }
-                .sum() }
+            .map { d ->
+                findTripByDriver(d)
+                    .map { it.cost }
+                    .sum()
+            }
             .sortedDescending()
-            .subList(0, findTwentyPercentDrivers())
+            .take(findTwentyPercentDrivers())  // equal .subList(0, findTwentyPercentDrivers())
+
             .sum()
     }
 
